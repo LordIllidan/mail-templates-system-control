@@ -1,0 +1,35 @@
+# Uruchamia się przy otwarciu issue — samo issue NIE odpala CI w fe/api.
+# Ten workflow daje widoczny run w Actions i komentarz z następnymi krokami.
+name: Issue — potwierdzenie i wskazówki
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  acknowledge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Komentarz z wyjaśnieniem CI/CD
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '**Automatyczna notatka (PLDC orchestrator)**',
+              '',
+              '- **To repo (`*-control`)** ma CI głównie na `push` / `pull_request` (walidacja dokumentacji). Samo utworzenie issue **nie** uruchamia buildu aplikacji.',
+              '- **Pipeline’y aplikacji** są w repozytoriach **fe** i **api** — uruchamiają się po **push** lub **PR** tam.',
+              '- Żeby zrealizować zgłoszenie: otwórz PR w `*-fe` / `*-api` (albo podepnij agenta z `repository_dispatch` — patrz dokumentacja szablonu orchestratora).',
+              '',
+              'Mapa repo: hub → `config/solutions/sample.json`.'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
